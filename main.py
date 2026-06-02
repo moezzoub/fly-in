@@ -17,7 +17,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--verbose", action="store_true", help="Print map summary and turn numbers")
     parser.add_argument("--no-color", action="store_true", help="Disable colored terminal output")
     parser.add_argument("--paths", type=int, default=20, help="Maximum candidate paths to search")
-    parser.add_argument("--show-paths", action="store_true", help="Print candidate paths in verbose mode")
+    parser.add_argument(
+        "--show-paths", action="store_true", help="Print candidate paths in verbose mode")
     return parser
 
 

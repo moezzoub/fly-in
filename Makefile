@@ -1,6 +1,6 @@
 PYTHON = python3
 MAIN = main.py
-MAP = maps/easy/01_linear_path.txt
+MAP = maps/easy/01_linear_path.txt 
 
 install:
 	$(PYTHON) -m pip install -r requirements.txt

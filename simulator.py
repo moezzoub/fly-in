@@ -1,10 +1,14 @@
 """Turn-by-turn drone simulator."""
 
+from __future__ import annotations
+
 from collections import defaultdict
 
 from graph import Graph
 from models import Drone
 from visualizer import Visualizer
+
+__all__ = ["Simulator"]
 
 
 class Simulator:
@@ -25,7 +29,10 @@ class Simulator:
         self.end = end
         self.visualizer = visualizer
         self.max_turns = max_turns
-        self.drones = [Drone(drone_id=index + 1, path=path) for index, path in enumerate(drone_paths)]
+        drone_list = []
+        for idx, path in enumerate(drone_paths):
+            drone_list.append(Drone(drone_id=idx + 1, path=path))
+        self.drones = drone_list
 
     def all_delivered(self) -> bool:
         """Return True when every drone reached the end."""
@@ -55,7 +62,8 @@ class Simulator:
         while not self.all_delivered():
             turn += 1
             if turn > self.max_turns:
-                raise RuntimeError("simulation stopped: max_turns reached, possible deadlock")
+                msg = "simulation stopped: max_turns reached, possible deadlock"
+                raise RuntimeError(msg)
 
             movements: list[str] = []
             occupancy = self.current_occupancy()
@@ -68,7 +76,9 @@ class Simulator:
 
         return turn
 
-    def _finish_restricted_movements(self, occupancy: dict[str, int], movements: list[str]) -> None:
+    def _finish_restricted_movements(
+        self, occupancy: dict[str, int], movements: list[str]
+    ) -> None:
         """Advance drones that are travelling to restricted zones."""
         for drone in self.drones:
             if drone.delivered or drone.in_flight_to is None:
@@ -76,8 +86,8 @@ class Simulator:
 
             drone.remaining_turns -= 1
             if drone.remaining_turns > 0:
-                connection_name = f"{drone.in_flight_from}-{drone.in_flight_to}"
-                movements.append(f"{drone.label()}-{connection_name}")
+                conn = f"{drone.in_flight_from}-{drone.in_flight_to}"
+                movements.append(f"{drone.label()}-{conn}")
                 continue
 
             destination = drone.in_flight_to
@@ -101,7 +111,9 @@ class Simulator:
         ready_drones = [
             drone
             for drone in self.drones
-            if not drone.delivered and drone.in_flight_to is None and drone.next_zone() is not None
+            if (not drone.delivered
+                and drone.in_flight_to is None
+                and drone.next_zone() is not None)
         ]
         ready_drones.sort(key=lambda drone: drone.index, reverse=True)
 

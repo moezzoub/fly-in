@@ -127,7 +127,8 @@ def find_candidate_paths(graph: Graph, start: str, end: str, limit: int = 20) ->
                 break
 
         for node in nodes[1:-1]:
-            node_penalty[node] = node_penalty.get(node, 0) + graph.zone_capacity(node, start, end) + 1
+            node_penalty[node] = node_penalty.get(node, 0)
+            + graph.zone_capacity(node, start, end) + 1
         for first, second in zip(nodes, nodes[1:]):
             edge_key = frozenset({first, second})
             edge = graph.edge_between(first, second)
@@ -136,11 +137,14 @@ def find_candidate_paths(graph: Graph, start: str, end: str, limit: int = 20) ->
     if not paths:
         raise NoPathError(f"no path from '{start}' to '{end}'")
 
-    paths.sort(key=lambda path: (path.cost, path.bottleneck_score(graph, start, end), len(path.nodes)))
+    paths.sort(key=lambda path:
+               (path.cost, path.bottleneck_score(graph, start, end), len(path.nodes)))
     return paths
 
 
-def assign_paths(nb_drones: int, paths: list[PathInfo], graph: Graph, start: str, end: str) -> list[list[str]]:
+def assign_paths(
+        nb_drones: int, paths: list[PathInfo], graph: Graph, start: str, end: str
+) -> list[list[str]]:
     """Assign drones to paths using load-balancing with bottleneck awareness."""
     assigned_counts = [0 for _ in paths]
     result: list[list[str]] = []
