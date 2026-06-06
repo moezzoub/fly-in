@@ -3,26 +3,14 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 from pathlib import Path
 
-from errors import ParsingError
-from graph import Graph
-from models import VALID_ZONE_TYPES, Zone
+from models import Connection, Graph, VALID_ZONE_TYPES, Zone, ZoneType
+from models.errors import ParsingError
 
 ZONE_PREFIXES = {"start_hub", "end_hub", "hub"}
 ZONE_METADATA_KEYS = {"zone", "color", "max_drones"}
 EDGE_METADATA_KEYS = {"max_link_capacity"}
-
-
-@dataclass(frozen=True)
-class ParsedMap:
-    """Result returned by the map parser."""
-
-    nb_drones: int
-    graph: Graph
-    start: str
-    end: str
 
 
 def strip_comment(line: str) -> str:
@@ -110,9 +98,11 @@ def parse_zone(prefix: str, body: str, line_number: int) -> Zone:
     if zone_type not in VALID_ZONE_TYPES:
         raise ParsingError(line_number, f"invalid zone type '{zone_type}'")
 
+    zone_enum = ZoneType(zone_type)
+
     max_drones = positive_int(metadata.get("max_drones", "1"), line_number, "max_drones")
     color = metadata.get("color", "none")
-    return Zone(name=name, x=x, y=y, zone_type=zone_type, color=color, max_drones=max_drones)
+    return Zone(name=name, x=x, y=y, zone_type=zone_enum, color=color, max_drones=max_drones)
 
 
 def parse_connection(body: str, graph: Graph, line_number: int) -> None:
@@ -132,15 +122,18 @@ def parse_connection(body: str, graph: Graph, line_number: int) -> None:
         line_number,
         "max_link_capacity",
     )
-    graph.add_edge(zone_a, zone_b, capacity, line_number)
+    graph.add_connection(
+        Connection(
+            graph.get_zone(zone_a),
+            graph.get_zone(zone_b),
+            capacity,
+        )
+    )
 
 
-def parse_file(path: str) -> ParsedMap:
-    """Parse a Fly-in map file and return a ParsedMap object."""
-    graph = Graph()
-    nb_drones: int | None = None
-    start_name: str | None = None
-    end_name: str | None = None
+def parse_file(path: str) -> Graph:
+    """Parse a Fly-in map file and return a populated Graph object."""
+    graph: Graph | None = None
     saw_connections = False
 
     try:
@@ -153,11 +146,12 @@ def parse_file(path: str) -> ParsedMap:
         if not line:
             continue
 
-        if nb_drones is None:
+        if graph is None:
             if not line.startswith("nb_drones:"):
                 raise ParsingError(line_number, "first line must be nb_drones: <positive_integer>")
             value = line.split(":", 1)[1].strip()
             nb_drones = positive_int(value, line_number, "nb_drones")
+            graph = Graph(nb_drones)
             continue
 
         if ":" not in line:
@@ -171,30 +165,30 @@ def parse_file(path: str) -> ParsedMap:
             if saw_connections:
                 raise ParsingError(line_number, "zones must be declared before connections")
             zone = parse_zone(prefix, body, line_number)
-            graph.add_zone(zone, line_number)
+            graph.add_zone(zone)
             if prefix == "start_hub":
-                if start_name is not None:
+                if graph.start_zone is not None:
                     raise ParsingError(line_number, "multiple start_hub lines")
-                start_name = zone.name
+                graph.set_start_zone(zone)
             elif prefix == "end_hub":
-                if end_name is not None:
+                if graph.end_zone is not None:
                     raise ParsingError(line_number, "multiple end_hub lines")
-                end_name = zone.name
+                graph.set_end_zone(zone)
         elif prefix == "connection":
             saw_connections = True
             parse_connection(body, graph, line_number)
         else:
             raise ParsingError(line_number, f"unknown prefix '{prefix}'")
 
-    if nb_drones is None:
+    if graph is None:
         raise ParsingError(0, "missing nb_drones line")
-    if start_name is None:
+    if graph.start_zone is None:
         raise ParsingError(0, "missing start_hub")
-    if end_name is None:
+    if graph.end_zone is None:
         raise ParsingError(0, "missing end_hub")
-    if graph.zones[start_name].is_blocked():
+    if graph.start_zone.is_blocked():
         raise ParsingError(0, "start_hub cannot be blocked")
-    if graph.zones[end_name].is_blocked():
+    if graph.end_zone.is_blocked():
         raise ParsingError(0, "end_hub cannot be blocked")
 
-    return ParsedMap(nb_drones=nb_drones, graph=graph, start=start_name, end=end_name)
+    return graph

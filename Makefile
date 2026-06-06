@@ -1,19 +1,18 @@
-PYTHON = python3
-MAIN = main.py
-MAP = maps/easy/01_linear_path.txt 
+.PHONY: install run debug clean lint lint-strict
 
 install:
-	$(PYTHON) -m pip install -r requirements.txt
+	python3 -m pip install -r requirements.txt
 
 run:
-	$(PYTHON) $(MAIN) $(MAP)
+	python3 main.py maps/challenger/01_the_impossible_dream.txt
 
 debug:
-	$(PYTHON) -m pdb $(MAIN) $(MAP)
+	python3 -m pdb main.py maps/challenger/01_the_impossible_dream.txt
 
 clean:
 	find . -type d -name "__pycache__" -exec rm -rf {} +
-	rm -rf .mypy_cache .pytest_cache
+	find . -type f -name "*.pyc" -delete
+	find . -type d -name ".mypy_cache" -exec rm -rf {} +
 
 lint:
 	flake8 .
@@ -22,7 +21,3 @@ lint:
 lint-strict:
 	flake8 .
 	mypy . --strict
-
-
-test:
-	$(PYTHON) tests.py
