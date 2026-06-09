@@ -1,0 +1,53 @@
+# Medium-Hard Level: Evaluator Bridge Map
+# Easier than hard/01, harder than medium/03
+
+nb_drones: 6
+
+start_hub: start 0 0 [color=green max_drones=6]
+
+# Upper fast route
+hub: upper_a 1 1 [zone=priority color=blue max_drones=2]
+hub: upper_b 2 1 [zone=priority color=blue]
+
+# Lower normal route
+hub: lower_a 1 -1 [color=yellow max_drones=2]
+hub: lower_b 2 -1 [color=yellow]
+
+# Merge and bottleneck
+hub: merge 3 0 [color=orange max_drones=2]
+hub: bottleneck 4 0 [color=yellow max_drones=1]
+
+# Two final choices
+hub: final_a 5 1 [zone=priority color=blue]
+hub: final_b 5 -1 [zone=priority color=blue]
+
+end_hub: goal 6 0 [color=green max_drones=6]
+
+# Trap route: valid but expensive
+hub: trap_1 2 -3 [zone=restricted color=red]
+hub: trap_2 3 -3 [zone=restricted color=red]
+
+# Dead end: looks possible but does not reach goal
+hub: dead_end 1 3 [color=gray]
+
+connection: start-upper_a
+connection: upper_a-upper_b
+connection: upper_b-merge
+
+connection: start-lower_a
+connection: lower_a-lower_b
+connection: lower_b-merge
+
+connection: merge-bottleneck
+
+connection: bottleneck-final_a
+connection: final_a-goal
+
+connection: bottleneck-final_b
+connection: final_b-goal
+
+connection: lower_a-trap_1
+connection: trap_1-trap_2
+connection: trap_2-merge
+
+connection: start-dead_end

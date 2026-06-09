@@ -6,29 +6,41 @@ from models.zone import Zone
 
 def reconstruct_path(previous: dict[str, list[str]], start: Zone,
                      end: Zone, graph: Graph) -> list[list[Zone]]:
-    """Rebuild all shortest paths from the previous map produced by Dijkstra"""
+    """Rebuild all shortest paths from the previous map produced by Dijkstra.
+
+    previous can contain many parents for the same zone when two routes have
+    the same shortest cost. We explore every parent combination without
+    changing previous.
+    """
+
+    if start.name == end.name:
+        return [[start]]
 
     paths: list[list[Zone]] = []
-    num = 1
-    while num > 0:
-        path = [end]
-        current_name = end.name
+    current_path: list[str] = [end.name]
 
-        while current_name != start.name:
-            current_names = previous[current_name]
-            if len(current_names) > 1:
-                num += 1
-                current_name = previous[current_name].pop()
-            else:
-                current_name = previous[current_name][0]
-            path.append(graph.get_zone(current_name))
-        num -= 1
-        path.reverse()
-        paths.append(path)
+    def backtrack(current_name: str) -> None:
+        if current_name == start.name:
+            zone_path = [
+                graph.get_zone(name)
+                for name in reversed(current_path)
+            ]
+            paths.append(zone_path)
+            return
+
+        for parent_name in previous.get(current_name, []):
+            if parent_name in current_path:
+                continue
+
+            current_path.append(parent_name)
+            backtrack(parent_name)
+            current_path.pop()
+
+    backtrack(end.name)
     return paths
 
 
-def find_shortest_path(graph: Graph) -> list[list[Zone]]:
+def find_short_path(graph: Graph) -> list[list[Zone]]:
     """Find all lowest-cost valid paths from start to end."""
 
     if graph.start_zone is None or graph.end_zone is None:

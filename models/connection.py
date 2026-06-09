@@ -22,6 +22,7 @@ class Connection:
         )
 
     def contains(self, zone: Zone) -> bool:
+        """check if zone included this connection"""
         return self.zone1 == zone or self.zone2 == zone
 
     def other_side(self, zone: Zone) -> Zone:

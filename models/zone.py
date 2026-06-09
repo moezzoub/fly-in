@@ -31,6 +31,7 @@ class Zone:
         self.current_drones = 0
 
     def rest_accept_drones(self) -> int:
+        """return how mutch for free slots"""
         return self.max_drones - self.current_drones
 
     def can_accept_drone(self) -> bool:

@@ -2,7 +2,7 @@ import sys
 from models.drone import Drone
 from models.graph import Graph
 from models.zone import Zone
-from simulation.pathfinder import find_shortest_path
+from simulation.pathfinder import find_short_path
 from visualizer import Visualizer
 
 
@@ -16,7 +16,7 @@ class Simulator:
         self.graph = graph
         self.start_zone = graph.start_zone
         self.end_zone = graph.end_zone
-        self.paths = find_shortest_path(graph)
+        self.paths = find_short_path(graph)
         if not self.paths:
             raise ValueError("No valid path found from start to end")
 
@@ -52,7 +52,7 @@ class Simulator:
         return all(drone.delivered for drone in self.drones)
 
     def run(self) -> None:
-        """Run simulation turns one by one when Space is pressed."""
+        """Run simulation turns one by one until all drones are delivered."""
         while not self.all_delivered():
             try:
                 self.turn += 1
@@ -162,7 +162,7 @@ class Simulator:
             if drone.drone_id in moved_this_turn:
                 continue
 
-            if drone.drone_id not in can_move.keys():
+            if drone.drone_id not in can_move:
                 continue
 
             if not drone.is_available():

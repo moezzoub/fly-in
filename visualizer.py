@@ -80,7 +80,7 @@ class Visualizer:
 
             point.set_position((x, y))
 
-        plt.pause(0.3)
+        plt.pause(0.5)
 
     def get_drone_position(self, drone: Drone) -> tuple[float, float] | None:
         """ Return the current visual position of a drone """
